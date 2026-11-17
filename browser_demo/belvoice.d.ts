@@ -2,16 +2,29 @@ export interface StressMLResult {
   enabled: boolean;
   applied: {word: string; stressed: string; confidence: number}[];
   skippedKnown: number;
+  /** OmniVoice local pipeline: counts of added accents per stage. */
+  stageCounts?: {usual: number; dictionary: number; statistical: number; ml: number};
 }
 export interface FrontendResult { normalized: string; phonemes: string; stressML: StressMLResult; }
 export interface SynthesisOptions {
+  /** Optional accents; OmniVoice receives stressed text, not BelG2P phonemes. */
   useStressML?: boolean;
-  /** Duration control during synthesis, not playback rate. 0.5–2, default 1. */
+  /** 0.5–2, default 1. GlowTTS/OmniVoice: duration conditioning; MOSS: pitch-preserving WSOLA. Never playbackRate. */
   speed?: number;
+  /** OmniVoice only: iterative generation steps, default 16. */
+  omniSteps?: 8 | 16 | 32;
+  /** MOSS only: safety limit, 1–375 frames (12.5 frames/s), default 375. */
+  mossMaxFrames?: number;
 }
 export interface BelVoiceOptions {
   /** Each engine owns one voice. Dispose it before switching to limit memory. */
-  voice?: 'default' | 'female-1';
+  voice?: 'default' | 'female-1' | 'omnivoice' | 'moss';
+  /** Experimental OmniVoice only. No automatic larger-download fallback. */
+  backend?: 'wasm' | 'webgpu';
+  /** Required explicit opt-in before OmniVoice can load large model files. */
+  allowModelDownload?: boolean;
+  /** Optional OmniVoice model mirror; defaults to a pinned Hugging Face revision. */
+  modelBaseUrl?: string | URL;
   /** Same-origin static runtime directory; defaults to this module's directory. */
   assetsUrl?: string | URL;
   /** 0 = auto (up to 4 threads); without cross-origin isolation falls back to 1. */
@@ -21,7 +34,9 @@ export interface BelVoiceOptions {
   onFrontend?: (result: FrontendResult) => void;
 }
 export interface RuntimeInfo {
-  voice: 'default' | 'female-1';
+  voice: 'default' | 'female-1' | 'omnivoice' | 'moss';
+  engine?: 'omnivoice' | 'moss';
+  backend?: 'wasm' | 'webgpu';
   requestedThreads: number;
   numThreads: number;
   crossOriginIsolated: boolean;
@@ -35,6 +50,9 @@ export interface RuntimeInfo {
 }
 export interface SynthesisMetrics {
   speed: number;
+  steps?: number;
+  diffusionMs?: number;
+  generationMs?: number;
   frontendMs: number; stressMlMs: number; encoderMs: number; decoderMs: number; vocoderMs: number;
   totalMs: number; duration: number; tokens: number; frames: number; sampleRate: number;
 }

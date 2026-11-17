@@ -33,21 +33,21 @@ export function decodeStressPrediction(segment, encoded, logits) {
   return {index,confidence:1/sum,stressed:chars.slice(0,index+1).join('')+'\u0301'+chars.slice(index+1).join('')};
 }
 
-export async function applyStressML(text, {isKnownWord, predictSegment}) {
+export async function applyStressML(text, {isKnownWord, predictSegment, skipImplicitStress=true}) {
   let output='', end=0, skippedKnown=0;
   const applied=[];
   for(const match of text.matchAll(stressWordPattern)) {
     const word=match[0];
     output+=text.slice(end,match.index);
     end=match.index+word.length;
-    if(word.includes('\u0301') || vowelCount(word)<=1 || /[оё]/iu.test(word)) {
+    if(word.includes('\u0301') || vowelCount(word)<=1 || (skipImplicitStress && /[оё]/iu.test(word))) {
       output+=word;
       continue;
     }
     if(isKnownWord(word)) {skippedKnown++;output+=word;continue;}
     const parts=word.split('-'), stressed=[], confidences=[];
     for(const part of parts) {
-      if(!part || !vowelCount(part) || /[оё]/iu.test(part) || isKnownWord(part)) {
+      if(!part || !vowelCount(part) || (skipImplicitStress && /[оё]/iu.test(part)) || isKnownWord(part)) {
         stressed.push(part);
       } else if(vowelCount(part)===1) {
         const chars=Array.from(part), index=chars.findIndex(c=>vowels.has(c.toLowerCase()));

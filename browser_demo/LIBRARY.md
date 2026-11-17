@@ -24,7 +24,7 @@ uv run python tools/browser_demo/package_library.py --refresh
 У ім ужо ёсць JS, WASM, ONNX, GrammarDB, слоўнікі, ліцэнзіі, Gleam FFI і manifest
 з памерамі/SHA-256 файлаў. HTML і код дэма-інтэрфейсу туды не ўваходзяць.
 
-Версія бібліятэкі — **0.3.0**. `--refresh` абнаўляе тую ж папку, праверыўшы
+Версія бібліятэкі — **0.4.0**. `--refresh` абнаўляе тую ж папку, праверыўшы
 ўсе файлы паводле manifest/SHA-256. Калі ёсць змененыя ці дадатковыя файлы,
 абнаўленне спыняецца без выдалення. Без `--refresh` непусты каталог не
 перазапісваецца. Вялікія runtime-файлы збіраюцца камандамі з
@@ -51,6 +51,13 @@ origin, што і старонку. Раздавайце `.js`/`.mjs` як JavaS
 `application/wasm`; SPA fallback **не павінен** вяртаць HTML замест assets.
 
 ## JavaScript API
+
+Асобны [эксперыментальны OmniVoice API](OMNIVOICE.md) выкарыстоўвае
+`voice: 'omnivoice'`, яўны `allowModelDownload` і падрыхтоўку/пакоўку
+`--omnivoice`. Звычайныя прыклады ніжэй застаюцца GlowTTS. Для OmniVoice
+няма runtime-кланавання; `useStressML` апцыянальна ўключае лакальны ланцужок
+правілаў, граматычнага слоўніка, статыстыкі і ML з перадачай націскаў у тэксце.
+Патрэбна значна больш памяці.
 
 ```js
 import {createBelVoice} from '/belvoice/belvoice.js';

@@ -1,4 +1,5 @@
 /** Browser-only, UI-independent BelVoice API. See belvoice.d.ts and LIBRARY.md. */
+import {OmniVoiceBrowser} from './omnivoice.js';
 export class BelVoiceError extends Error {
   constructor(code, message) {
     super(message);
@@ -8,13 +9,14 @@ export class BelVoiceError extends Error {
 }
 
 export function createBelVoice(options = {}) {
+  if(options.voice==='omnivoice') return new OmniVoiceBrowser(options,BelVoiceError);
   return new BelVoice(options);
 }
 
 class BelVoice {
   constructor(options) {
     const voice = options.voice ?? 'default';
-    if (!['default', 'female-1'].includes(voice)) throw new BelVoiceError('INVALID_OPTIONS', 'Unknown voice.');
+    if (!['default', 'female-1', 'moss'].includes(voice)) throw new BelVoiceError('INVALID_OPTIONS', 'Unknown voice.');
     const numThreads = options.numThreads ?? 0;
     if (!Number.isInteger(numThreads) || numThreads < 0) {
       throw new BelVoiceError('INVALID_OPTIONS', 'numThreads must be a nonnegative integer (0 = auto).');
@@ -74,12 +76,15 @@ class BelVoice {
     if (typeof useStressML !== 'boolean') throw new BelVoiceError('INVALID_OPTIONS', 'useStressML must be a boolean.');
     const speed = options.speed ?? 1;
     if (!Number.isFinite(speed) || speed < 0.5 || speed > 2) throw new BelVoiceError('INVALID_OPTIONS', 'speed must be a number between 0.5 and 2.');
+    const mossMaxFrames=options.mossMaxFrames ?? 375;
+    if(this._options.voice==='moss' && (!Number.isInteger(mossMaxFrames) || mossMaxFrames<1 || mossMaxFrames>375)) throw new BelVoiceError('INVALID_OPTIONS','mossMaxFrames must be an integer between 1 and 375.');
+    if(this._options.voice==='moss' && Array.from(text.trim()).length>160) throw new BelVoiceError('INVALID_TEXT','MOSS: at most 160 characters.');
     if (this._busy) throw new BelVoiceError('BUSY', 'A synthesis is already in progress. There is no internal queue.');
     this._busy = true;
     try {
       await this.load();
       if (this._disposed) throw this._disposedError();
-      const result = await this._request('synthesize', {text, useStressML, speed});
+      const result = await this._request('synthesize', {text, useStressML, speed,...(this._options.voice==='moss'?{mossMaxFrames}:{})});
       return {...result, runtime: this._info};
     } finally { this._busy = false; }
   }
@@ -102,7 +107,7 @@ class BelVoice {
     if (typeof Worker === 'undefined') throw new BelVoiceError('UNSUPPORTED', 'BelVoice requires a browser with module Workers.');
     // The whole directory is a static runtime; no bundler-specific Worker magic.
     let worker;
-    try { worker = new Worker(new URL('worker.js', this._url), {type: 'module', name: 'belvoice'}); }
+    try { worker = new Worker(new URL(this._options.voice==='moss'?'moss-worker.js':'worker.js', this._url), {type: 'module', name: 'belvoice'}); }
     catch (error) { throw new BelVoiceError('WORKER_ERROR', `Could not create BelVoice Worker: ${error.message}`); }
     this._worker = worker;
     worker.onmessage = ({data}) => {

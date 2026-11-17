@@ -1,7 +1,8 @@
 import * as ort from './vendor/ort.wasm.min.mjs';
 import {prepareText, phonemizeText, tokenize, expandDurations, encodeWav} from './frontend.js';
 import {resolveNumThreads} from './runtime-config.js';
-import {applyStressML, encodeStressSegment, decodeStressPrediction} from './stress-ml.js';
+import {applyStressML} from './stress-ml.js';
+import {createStressPredictor} from './stress-predictor.js';
 
 ort.env.wasm.proxy = false; // Already running in a dedicated Worker.
 ort.env.wasm.wasmPaths = new URL('./vendor/', import.meta.url).href;
@@ -10,37 +11,7 @@ const log = text => postMessage({type:'log', text});
 const status = text => postMessage({type:'status', text});
 let loaded;
 let busy = false;
-let stressModel;
-const stressPredictions=new Map();
-
-async function predictStressSegment(segment) {
-  if(stressPredictions.has(segment)) return stressPredictions.get(segment);
-  if(!stressModel) stressModel=(async()=>{
-    const config=await readJson('./models/stress-ml-config.json');
-    const bytes=await readBytes('./models/stress-ml.onnx');
-    status('Ініцыялізацыя StressML…');
-    const session=await ort.InferenceSession.create(bytes,{executionProviders:['wasm'],graphOptimizationLevel:'all'});
-    log('StressML загружаная; наступныя запыты выкарыстоўваюць тую ж мадэль.');
-    return {config,session};
-  })().catch(error=>{stressModel=undefined;throw error;});
-  const {config,session}=await stressModel;
-  const encoded=encodeStressSegment(segment,config);
-  if(!encoded.vowelMask.some(Boolean)) return null;
-  const feeds={ids:new ort.Tensor('int64',encoded.ids,[1,config.max_len]),
-    pad_mask:new ort.Tensor('bool',encoded.padMask,[1,config.max_len]),
-    vowel_mask:new ort.Tensor('bool',encoded.vowelMask,[1,config.max_len])};
-  let output,prediction;
-  try {
-    output=await session.run(feeds);
-    prediction=decodeStressPrediction(segment,encoded,output.logits.data);
-  } finally {
-    for(const tensor of Object.values(feeds)) tensor.dispose();
-    if(output) for(const tensor of Object.values(output)) tensor.dispose();
-  }
-  if(stressPredictions.size>=512) stressPredictions.delete(stressPredictions.keys().next().value);
-  stressPredictions.set(segment,prediction);
-  return prediction;
-}
+const predictStressSegment=createStressPredictor({ort,readJson,readBytes,status,log});
 
 async function readBytes(path) {
   const start=performance.now();

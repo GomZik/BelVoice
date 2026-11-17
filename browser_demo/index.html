@@ -10,14 +10,29 @@
 <body>
   <main>
     <header><span class="badge">BelVoice · эксперымент</span><h1>Беларускі голас у браўзары</h1>
-      <p>BelG2P → GlowTTS → HiFi-GAN. Усё вылічаецца на гэтым камп’ютары, без API сінтэзу.</p></header>
+      <p>GlowTTS, OmniVoice або эксперыментальны MOSS-TTS-Nano. Усё вылічаецца на гэтым камп’ютары, без API сінтэзу.</p></header>
     <label for="text">Беларускі тэкст</label>
     <textarea id="text" rows="5">Прывітанне! Гэта праверка беларускага сінтэзу маўлення.</textarea>
     <label for="voice">Голас</label>
     <select id="voice">
       <option value="default">Арыгінальны — alex73</option>
       <option value="female-1">Жаночы — slapula №1</option>
+      <option value="omnivoice">OmniVoice — беларускі ўзор (эксперымент, NC)</option>
+      <option value="moss">MOSS-TTS-Nano — беларускі ўзор (эксперымент, Apache-2.0)</option>
     </select>
+    <fieldset id="omni-options" hidden>
+      <legend>Эксперыментальны OmniVoice</legend>
+      <label for="omni-backend">Рухавік</label>
+      <select id="omni-backend"><option value="webgpu">WebGPU / FP16 (~1.3 GB, меншая загрузка)</option><option value="wasm">WASM / CPU (~2.5 GB)</option></select>
+      <label for="omni-steps">Крокі генерацыі</label>
+      <select id="omni-steps"><option value="8">8 — хуткая проба</option><option value="16" selected>16 — кампраміс</option><option value="32">32 — павольней</option></select>
+      <label class="ml-option"><input id="omni-consent" type="checkbox"> Разумею: вялікая загрузка, высокі расход памяці і некамерцыйная ліцэнзія вагаў.</label>
+      <p class="hint">Файлы мадэляў спампоўваюцца з Hugging Face і кэшуюцца ў браўзары. Тэкст і аўдыё туды не адпраўляюцца. WebGPU патрабуе shader-f16; аўтаматычнага пераходу на большы WASM-набор няма. FP32/WASM можа вычарпаць памяць і закрыць укладку або выклікаць сістэмны OOM — памер файлаў не роўны расходу RAM. Пакуль да 160 сімвалаў пасля нармалізацыі, без BelG2P. Опцыя StressML уключае правіла о/ё, адназначны граматычны слоўнік (~12.3 MiB), статыстыку і ML для рэшты. Націскі перадаюцца ў тэксце; уплыў на вымаўленне параўноўвайце на слых. Кантэкстнага StressLLM няма. Prompt зроблены з узору BelVoice; мадэлі Whisper і энкодэра ў браўзер не загружаюцца.</p>
+    </fieldset>
+    <fieldset id="moss-options" hidden>
+      <legend>Эксперыментальны MOSS-TTS-Nano</legend>
+      <p class="hint">WASM / CPU. Каля 684 MiB вагаў і токенізатара загружаюцца з гэтага сайта, не з Hugging Face. Код і вагі — Apache-2.0. Беларуская не ўваходзіць у заяўленыя мовы: гэта проба, не гарантаваны беларускі голас. Выкарыстоўваецца фіксаваны ўзор BelVoice, без runtime-кланавання. Нашы нармалізацыя і поўны лакальны ланцужок націскаў захаваныя (уключаюцца сцяжком StressML). Пакуль да 160 сімвалаў, максімум 30 с гуку. Выхад — 48 kHz mono, зведзены з native stereo. Хуткасць змяняецца праз WSOLA без змены тону. Расход RAM большы за памер файлаў; не запускайце некалькі цяжкіх укладак адначасова.</p>
+    </fieldset>
     <label for="speed">Хуткасць маўлення: <output id="speed-value" for="speed">1.00×</output></label>
     <input id="speed" type="range" min="0.5" max="2" step="0.05" value="1">
     <p class="hint">1× — зыходны тэмп; 1.25–1.4× — хутчэй. Уплывае на новы сінтэз і WAV, не на хуткасць прайгравання. На крайніх значэннях магчымае пагаршэнне якасці.</p>
@@ -26,7 +41,7 @@
     <p class="hint">Цэлыя лікі чытаюцца словамі: 1000 → «адна тысяча». Без кантэкстнага скланення, распазнавання дат і дробаў.</p>
     <label class="ml-option"><input id="use-stress-ml" type="checkbox"> Выкарыстоўваць StressML для невядомых слоў</label>
     <p class="hint">Эксперымент: ручныя і слоўнікавыя націскі захоўваюцца. Дадатковая мадэль (~18 MiB) загружаецца толькі пры патрэбе; без аналізу кантэксту.</p>
-    <div class="actions"><button id="speak">Агучыць</button><span id="status" role="status">Гатова да запуску</span></div>
+    <div class="actions"><button id="speak">Агучыць</button><button id="cancel" hidden>Спыніць</button><span id="status" role="status">Гатова да запуску</span></div>
     <p class="hint">Першы запуск загружае лакальныя файлы мадэляў і слоўніка. Гэта можа заняць некаторы час; наступныя сінтэзы выкарыстоўваюць іх паўторна.</p>
     <section><h2>Час загрузкі і чакання</h2><dl>
       <dt>Першая загрузка і падрыхтоўка выбранага голасу</dt><dd id="load-time">Яшчэ не запускалася</dd>

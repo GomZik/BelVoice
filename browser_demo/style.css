@@ -13,7 +13,9 @@ textarea { width: 100%; font: inherit; background: #1a2633; color: inherit; bord
 textarea:focus { outline: 2px solid #8fe0bc; }
 select { font: inherit; color: inherit; background: #1a2633; border: 1px solid #496072; border-radius: 8px; padding: 8px 12px; max-width: 100%; }
 select:focus { outline: 2px solid #8fe0bc; }
-.actions { display: flex; align-items: center; gap: 20px; }
+.actions { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+fieldset { border: 1px solid #496072; border-radius: 10px; margin: 16px 0; padding: 16px; }
+fieldset[hidden] { display: none; }
 button { border: 0; border-radius: 8px; background: #8fe0bc; color: #10251b; font: inherit; font-weight: 700; padding: 12px 26px; cursor: pointer; }
 button:disabled { opacity: .5; cursor: wait; }
 section, details { border-top: 1px solid #314354; margin-top: 26px; padding-top: 16px; }

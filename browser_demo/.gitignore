@@ -4,3 +4,5 @@
 /vendor/
 /data/
 /verification-*.json
+/omni/
+/moss/

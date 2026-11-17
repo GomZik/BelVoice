@@ -23,7 +23,7 @@ license = "LGPL-3.0-or-later"
 license-files = ["LICENSE.md"]
 
 [project.optional-dependencies]
-browser-demo = ["onnx", "onnxruntime", "onnxscript", "playwright", "safetensors"]
+browser-demo = ["onnx", "onnxruntime", "onnxscript", "playwright", "safetensors", "sentencepiece"]
 
 [tool.setuptools.package-data]
 "*" = ["**/*.json", "**/*.wav"]

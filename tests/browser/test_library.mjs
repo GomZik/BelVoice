@@ -15,6 +15,27 @@ const tick=()=>new Promise(resolve=>setImmediate(resolve));
 const info={numThreads:1,requestedThreads:0,sampleRate:22050,crossOriginIsolated:false};
 beforeEach(()=>{FakeWorker.instances=[];globalThis.Worker=FakeWorker;});
 
+test('MOSS owns its local worker, forwards stress/frame limits and cancels via the common lifecycle',async()=>{
+  const engine=createBelVoice({voice:'moss',assetsUrl:'https://example.test/voices/'});
+  const pending=engine.synthesize('Прывітанне!',{useStressML:true,mossMaxFrames:100,speed:1.2});
+  const worker=FakeWorker.instances[0];
+  assert.equal(worker.url.href,'https://example.test/voices/moss-worker.js');
+  worker.respond(worker.messages[0],{...info,voice:'moss',engine:'moss',sampleRate:48000});
+  await tick();
+  assert.equal(worker.messages[1].useStressML,true);
+  assert.equal(worker.messages[1].mossMaxFrames,100);
+  assert.equal(worker.messages[1].speed,1.2);
+  await assert.rejects(engine.synthesize('Другі'),{code:'BUSY'});
+  engine.dispose();await assert.rejects(pending,{code:'DISPOSED'});assert.ok(worker.terminated);
+});
+
+test('invalid MOSS limits/text fail before model loading',async()=>{
+  const engine=createBelVoice({voice:'moss'});
+  for(const frames of [0,376,1.5,NaN]) await assert.rejects(engine.synthesize('Так.',{mossMaxFrames:frames}),{code:'INVALID_OPTIONS'});
+  await assert.rejects(engine.synthesize('а'.repeat(161)),{code:'INVALID_TEXT'});
+  assert.equal(FakeWorker.instances.length,0);engine.dispose();
+});
+
 test('loads once, resolves a subdirectory URL, shares preload and owns one Worker',async()=>{
   const engine=createBelVoice({assetsUrl:'https://example.test/public/voice'});
   assert.equal(FakeWorker.instances.length,0);
