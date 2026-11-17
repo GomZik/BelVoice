@@ -6,8 +6,6 @@ from .common import WORD_PATTERN, word_match_case
 class StressStat:
     def __init__(self):
         dir = importlib.resources.files('belvoice.synth.stress')
-        with (dir.joinpath('stresses-nohomographs.json').open('r', encoding='utf-8') as json_file):
-            self._stresses_nohomographs = json.load(json_file)
         with (dir.joinpath('stresses-stat.json').open('r', encoding='utf-8') as json_file):
             self._stresses_stat = json.load(json_file)
 

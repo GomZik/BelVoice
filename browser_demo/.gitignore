@@ -1,0 +1,6 @@
+# Reproducible local build artifacts, kept on disk for the runnable demo.
+/models/
+/g2p/
+/vendor/
+/data/
+/verification-*.json

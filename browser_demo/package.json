@@ -1,0 +1,14 @@
+{
+  "name": "@belvoice/browser",
+  "version": "0.3.0",
+  "description": "Local Belarusian TTS in a browser Worker with ONNX Runtime Web",
+  "type": "module",
+  "license": "LGPL-3.0-or-later",
+  "exports": {
+    ".": { "types": "./belvoice.d.ts", "import": "./belvoice.js" }
+  },
+  "files": [
+    "belvoice.js", "belvoice.d.ts", "worker.js", "frontend.js", "number-words.js", "runtime-config.js", "stress-ml.js",
+    "models", "g2p", "data", "vendor", "LICENSE.md", "README.md", "integrations"
+  ]
+}

@@ -1,71 +1,42 @@
-import os
-import tempfile
-import shutil
-import io
 from pathlib import Path
-from huggingface_hub import snapshot_download, constants
-from TTS.utils.manage import ModelManager
+
+from huggingface_hub import snapshot_download
 from TTS.utils.synthesizer import Synthesizer
 
+
 class TTSCoquiTTS:
+    MODEL_REPO = 'alex73/BelarusianTTSviaCoquiTTS'
+    MODEL_REVISION = 'd7684c1dc4bcfd69708bbc013b251549ae40b1ca'
+
     def __init__(self):
-        self._models_path = snapshot_download(repo_id="alex73/BelarusianTTSviaCoquiTTS")
-        self._models_relative_path = Path(self._models_path).relative_to(Path(constants.HF_HUB_CACHE))
+        self._models_path = snapshot_download(repo_id=self.MODEL_REPO, revision=self.MODEL_REVISION)
+        self._synthesizer = None
+
+    def _get_synthesizer(self):
+        # Load once per instance, not once per utterance.
+        if self._synthesizer is None:
+            models = Path(self._models_path)
+            self._synthesizer = Synthesizer(
+                tts_checkpoint=str(models / "glowtts/best_model_23590.pth"),
+                tts_config_path=str(models / "glowtts/config.json"),
+                vocoder_checkpoint=str(models / "hifigan/best_model_163888.pth"),
+                vocoder_config=str(models / "hifigan/config.json"),
+                use_cuda=False,
+            )
+        return self._synthesizer
 
     def tts(self, text: str, output_file_path: str):
-        mp = self._models_relative_path
-        self._convert(text, output_file_path)
-            # logs = self._client.containers.run(
-            #     self._image,
-            #     entrypoint = f"python3 TTS/server/convert.py --config_path /m/{mp}/glowtts/config.json --model_path /m/{mp}/glowtts/*.pth --vocoder_config_path /m/{mp}/hifigan/config.json --vocoder_path /m/{mp}/hifigan/*.pth",
-            #     volumes = {constants.HF_HUB_CACHE : {'bind': '/m', 'mode': 'ro'}, tmpdirname: {'bind': '/fan/', 'mode': 'rw'}}
-            # )
-            # print(logs.decode('utf-8'))
-            # shutil.move(os.path.join(tmpdirname, "result.wav"), output_file_path)
-
-    def _convert(self, text: str, output_file_path: str):
-
-        path =None# "/root/TTS/.models.json"
-        manager = ModelManager(path)
-
-        # update in-use models to the specified released models.
-        model_path = None
-        config_path = None
-        speakers_file_path = None
-        vocoder_path = None
-        vocoder_config_path = None
-
-        model_path = f"{self._models_path}/glowtts/best_model_23590.pth"
-        config_path = f"{self._models_path}/glowtts/config.json"
-        speakers_file_path = None
-
-        vocoder_path = f"{self._models_path}/hifigan/best_model_163888.pth"
-        vocoder_config_path = f"{self._models_path}/hifigan/config.json"
-
-        # load models
-        synthesizer = Synthesizer(
-            tts_checkpoint=model_path,
-            tts_config_path=config_path,
-            tts_speakers_file=speakers_file_path,
-            tts_languages_file=None,
-            vocoder_checkpoint=vocoder_path,
-            vocoder_config=vocoder_config_path,
-            encoder_checkpoint="",
-            encoder_config="",
-            use_cuda=None
-        )
-
-        use_multi_speaker = None
-        speaker_manager = None
-
-        use_multi_language = None
-        language_manager = None
-
-        # TODO: set this from SpeakerManager
-        use_gst = synthesizer.tts_config.get("use_gst", False)
-
+        synthesizer = self._get_synthesizer()
+        characters = synthesizer.tts_model.tokenizer.characters
+        config = synthesizer.tts_config.characters
+        allowed = set(config.characters + config.punctuations)
+        unknown = set(text) - allowed
+        if unknown:
+            raise ValueError(f"Невядомыя для GlowTTS сімвалы фанем: {''.join(sorted(unknown))!r}")
+        if not any(c in config.characters for c in text):
+            raise ValueError("Тэкст не ўтрымлівае фанем для сінтэзу")
+        # Check the actual tokenizer too: it otherwise silently drops unknowns.
+        for char in text:
+            characters.char_to_id(char)
         wavs = synthesizer.tts(text, split_sentences=False)
-        out = io.BytesIO()
-        synthesizer.save_wav(wavs, out)
-        with open(output_file_path, "wb") as f:
-            f.write(out.getbuffer())
+        synthesizer.save_wav(wavs, str(output_file_path))

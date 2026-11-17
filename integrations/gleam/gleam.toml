@@ -1,0 +1,5 @@
+name = "belvoice_browser_ffi"
+version = "0.3.0"
+description = "Browser-only callback bindings for BelVoice"
+licenses = ["LGPL-3.0-or-later"]
+target = "javascript"

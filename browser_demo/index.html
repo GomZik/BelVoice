@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="be">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>BelVoice — лакальны сінтэз у браўзары</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <header><span class="badge">BelVoice · эксперымент</span><h1>Беларускі голас у браўзары</h1>
+      <p>BelG2P → GlowTTS → HiFi-GAN. Усё вылічаецца на гэтым камп’ютары, без API сінтэзу.</p></header>
+    <label for="text">Беларускі тэкст</label>
+    <textarea id="text" rows="5">Прывітанне! Гэта праверка беларускага сінтэзу маўлення.</textarea>
+    <label for="voice">Голас</label>
+    <select id="voice">
+      <option value="default">Арыгінальны — alex73</option>
+      <option value="female-1">Жаночы — slapula №1</option>
+    </select>
+    <label for="speed">Хуткасць маўлення: <output id="speed-value" for="speed">1.00×</output></label>
+    <input id="speed" type="range" min="0.5" max="2" step="0.05" value="1">
+    <p class="hint">1× — зыходны тэмп; 1.25–1.4× — хутчэй. Уплывае на новы сінтэз і WAV, не на хуткасць прайгравання. На крайніх значэннях магчымае пагаршэнне якасці.</p>
+    <p class="hint">Загружаецца толькі выбраны голас. Пры змене папярэдні рухавік вызваляецца; новы ініцыялізуецца пасля націскання «Агучыць». Магчымыя адрозненні ў вымаўленні і інтанацыі.</p>
+    <p class="hint">Можна пазначыць націск уручную: му́ка / мука́. Адзін сінтэз за раз.</p>
+    <p class="hint">Цэлыя лікі чытаюцца словамі: 1000 → «адна тысяча». Без кантэкстнага скланення, распазнавання дат і дробаў.</p>
+    <label class="ml-option"><input id="use-stress-ml" type="checkbox"> Выкарыстоўваць StressML для невядомых слоў</label>
+    <p class="hint">Эксперымент: ручныя і слоўнікавыя націскі захоўваюцца. Дадатковая мадэль (~18 MiB) загружаецца толькі пры патрэбе; без аналізу кантэксту.</p>
+    <div class="actions"><button id="speak">Агучыць</button><span id="status" role="status">Гатова да запуску</span></div>
+    <p class="hint">Першы запуск загружае лакальныя файлы мадэляў і слоўніка. Гэта можа заняць некаторы час; наступныя сінтэзы выкарыстоўваюць іх паўторна.</p>
+    <section><h2>Час загрузкі і чакання</h2><dl>
+      <dt>Першая загрузка і падрыхтоўка выбранага голасу</dt><dd id="load-time">Яшчэ не запускалася</dd>
+      <dt>Апошні запыт: ад націскання да гатовага гуку</dt><dd id="wait-time">—</dd>
+    </dl><p class="hint">Загрузка ўключае атрыманне файлаў (з сеткі або кэша) і падрыхтоўку рухавіка. StressML загружаецца асобна пры патрэбе; гэты час уваходзіць у ML-этап сінтэзу. Для параўнання агучце той самы тэкст двойчы.</p></section>
+    <section id="result" hidden>
+      <h2>Вынік</h2><audio id="audio" controls></audio>
+      <a id="download" download="belvoice.wav">Спампаваць WAV</a>
+      <p id="metrics"></p>
+      <p id="stage-times" class="hint"></p>
+    </section>
+    <section><h2>Падрыхтоўка тэксту</h2><dl>
+      <dt>Падрыхтаваны тэкст з націскамі</dt><dd id="normalized">—</dd>
+      <dt>StressML</dt><dd id="ml-info">Выключана</dd>
+      <dt>Фанемы для GlowTTS</dt><dd id="phonemes">—</dd>
+    </dl></section>
+    <details open><summary>Дыягностыка</summary><pre id="log" aria-live="polite"></pre></details>
+    <footer><span id="runtime">ONNX Runtime Web / WASM, аўтаматычны выбар патокаў, CPU.</span> JVM, Python і серверны сінтэз не выкарыстоўваюцца.
+      <br>Націскі ў амографах выбіраюцца статыстычна; магчымыя памылкі вымаўлення. Якасць паходзіць ад існуючых мадэляў BelVoice.</footer>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

@@ -9,11 +9,21 @@ description = "Belarusian TTS/ASR framework"
 authors = [{name = "Aleś Bułojčyk", email = "alex73mail@gmail.com"}]
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "coqui-tts[codec]>=0.28.0",
+    "huggingface-hub>=2.4.0",
+    "jpype1>=1.7.0",
+    "numpy>=2.5.4",
+    "pooch>=1.9.0",
+    "six>=1.17.0",
+    "torch>=2.15.0",
+    "torchaudio>=2.11.1",
+]
 license = "LGPL-3.0-or-later"
 license-files = ["LICENSE.md"]
 
 [project.optional-dependencies]
+browser-demo = ["onnx", "onnxruntime", "onnxscript", "playwright", "safetensors"]
 
 [tool.setuptools.package-data]
 "*" = ["**/*.json", "**/*.wav"]

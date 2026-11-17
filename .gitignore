@@ -5,3 +5,13 @@ target/
 /framework/belvoice/synth/stress/stresses-nohomographs.json
 /tools/stress_ml/.corpus_cache.pkl
 /tools/stress_ml/stress.list
+/dist/
+
+# Local environments, test output and downloaded checkpoint copies.
+/.venv/
+/build/
+/.pytest_cache/
+/.ruff_cache/
+/models/
+/*.wav
+/*.flac
